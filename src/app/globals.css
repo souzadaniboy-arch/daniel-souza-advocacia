@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-terracotta: #b65f4a;
+  --brand-deep: #8f4033;
+  --brand-off-white: #f7f3ee;
+  --brand-sand: #e7d8c8;
+  --brand-graphite: #252525;
+  --brand-gray: #686868;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-brand-off-white font-sans text-brand-graphite antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif;
+  }
+
+  ::selection {
+    background-color: var(--brand-terracotta);
+    color: #fff;
+  }
+
+  /* Acessibilidade: foco visível consistente */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--brand-deep);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Movimento reduzido */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm px-6 py-3 text-sm font-medium tracking-wide transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-deep;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-terracotta text-white hover:bg-brand-deep;
+  }
+
+  .btn-secondary {
+    @apply btn border border-brand-terracotta bg-transparent text-brand-terracotta hover:bg-brand-terracotta hover:text-white;
+  }
+
+  .btn-light {
+    @apply btn bg-white text-brand-graphite hover:bg-brand-sand;
+  }
+
+  .btn-dark {
+    @apply btn bg-brand-graphite text-white hover:bg-brand-terracotta;
+  }
+
+  .btn-whatsapp {
+    @apply btn bg-[#25D366] text-white hover:bg-[#1da851];
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-brand-graphite;
+  }
+
+  .input {
+    @apply w-full rounded-sm border border-brand-sand bg-white px-4 py-3 text-base text-brand-graphite placeholder:text-brand-gray transition-colors focus:border-brand-terracotta focus:outline-none focus:ring-1 focus:ring-brand-terracotta;
+  }
+
+  .link-underline {
+    @apply text-brand-terracotta underline-offset-4 hover:underline;
+  }
+
+  .section-pad {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  /* Conteúdo de artigos (markdown renderizado) */
+  .prose-article {
+    @apply max-w-prose text-lg leading-relaxed text-brand-graphite;
+  }
+
+  .prose-article h1 {
+    @apply mb-6 text-3xl sm:text-4xl;
+  }
+
+  .prose-article h2 {
+    @apply mb-4 mt-10 text-2xl sm:text-3xl;
+  }
+
+  .prose-article h3 {
+    @apply mb-3 mt-8 text-xl sm:text-2xl;
+  }
+
+  .prose-article p {
+    @apply mb-6;
+  }
+
+  .prose-article a {
+    @apply text-brand-terracotta underline underline-offset-4 hover:text-brand-deep;
+  }
+
+  .prose-article strong {
+    @apply font-semibold;
+  }
+
+  .prose-article blockquote {
+    @apply my-8 border-l-4 border-brand-terracotta bg-brand-sand/40 px-6 py-4 text-brand-gray;
+  }
+
+  .prose-article ul {
+    @apply mb-6 list-disc space-y-2 pl-6;
+  }
+
+  .prose-article ol {
+    @apply mb-6 list-decimal space-y-2 pl-6;
+  }
+
+  .prose-article hr {
+    @apply my-10 border-brand-sand;
+  }
+}

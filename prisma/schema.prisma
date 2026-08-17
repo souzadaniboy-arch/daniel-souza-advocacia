@@ -1,0 +1,333 @@
+// ============================================================
+// Prisma Schema — Daniel de Souza Advocacia e Consultoria Jurídica
+// Produção: MySQL (provider = "mysql")
+//   DATABASE_URL="mysql://user:pass@host:3306/dbname"
+//
+// Dev local (SQLite): trocar provider para "sqlite" e
+//   DATABASE_URL="file:./dev.db" no .env
+//
+// Para sincronizar o schema com o banco:
+//   npx prisma generate && npx prisma db push
+//
+// Nota: enums foram representados como String para manter
+// compatibilidade com SQLite, MySQL e PostgreSQL.
+// Valores possíveis:
+//   User.role: "ADMIN" | "EDITOR"
+//   Article.status: "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED"
+//   Newsletter.status: "DRAFT" | "SCHEDULED" | "SENT"
+//   Subscriber.status: "ACTIVE" | "UNSUBSCRIBED"
+//   ContactMessage.status: "NEW" | "READ" | "ARCHIVED"
+//   Category.type: "AREA" | "ARTICLE"
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- AUTENTICAÇÃO ----------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("EDITOR")
+  active       Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  sessions     Session[]
+  auditLogs    AuditLog[]
+  media        Media[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ---------- CONTEÚDO ----------
+
+model Author {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  bio       String?
+  photo     String?
+  email     String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  articles  Article[]
+
+  @@map("authors")
+}
+
+model Category {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  description     String?
+  type            String    @default("ARTICLE")
+  whatsappMessage String?
+  order           Int       @default(0)
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  articles        Article[]
+  faqs            Faq[]
+
+  @@map("categories")
+}
+
+model Article {
+  id              String   @id @default(cuid())
+  title           String
+  subtitle        String?
+  slug            String   @unique
+  summary         String?
+  content         String
+  coverImage      String?
+  ogImage         String?
+  keywords        String?
+  metaTitle       String?
+  metaDescription String?
+  readingTime     Int      @default(1)
+  status          String   @default("DRAFT")
+  publishedAt     DateTime?
+  scheduledAt     DateTime?
+  featured        Boolean  @default(false)
+  views           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  categoryId      String
+  authorId        String?
+  category        Category @relation(fields: [categoryId], references: [id])
+  author          Author?  @relation(fields: [authorId], references: [id])
+  faqs            ArticleFAQ[]
+  relatedFrom     RelatedArticle[] @relation("relatedTo")
+  relatedTo       RelatedArticle[] @relation("relatedFrom")
+  newsletters     NewsletterArticle[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@map("articles")
+}
+
+model ArticleFAQ {
+  articleId String
+  faqId     String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  faq       Faq     @relation(fields: [faqId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, faqId])
+  @@map("article_faqs")
+}
+
+model RelatedArticle {
+  articleAId String
+  articleBId String
+  articleA   Article @relation("relatedFrom", fields: [articleAId], references: [id], onDelete: Cascade)
+  articleB   Article @relation("relatedTo", fields: [articleBId], references: [id], onDelete: Cascade)
+
+  @@id([articleAId, articleBId])
+  @@map("related_articles")
+}
+
+model Faq {
+  id         String   @id @default(cuid())
+  question   String
+  answer     String
+  order      Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  articles   ArticleFAQ[]
+
+  @@index([active])
+  @@map("faqs")
+}
+
+model Newsletter {
+  id          String   @id @default(cuid())
+  subject     String
+  title       String
+  intro       String?
+  content     String
+  ctaLabel    String?
+  ctaUrl      String?
+  status      String   @default("DRAFT")
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  articles    NewsletterArticle[]
+
+  @@map("newsletters")
+}
+
+model NewsletterArticle {
+  newsletterId String
+  articleId    String
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  article      Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@id([newsletterId, articleId])
+  @@map("newsletter_articles")
+}
+
+// ---------- RELACIONAMENTO / LGPD ----------
+
+model Subscriber {
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
+  status           String   @default("ACTIVE")
+  source           String?
+  consent          Boolean  @default(false)
+  consentAt        DateTime?
+  unsubscribedAt   DateTime?
+  unsubscribeToken String?  @unique
+  createdAt        DateTime @default(now())
+
+  @@index([status])
+  @@map("subscribers")
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  consent   Boolean  @default(false)
+  status    String   @default("NEW")
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@map("contact_messages")
+}
+
+model CookieConsent {
+  id          String   @id @default(cuid())
+  visitorKey  String
+  necessary   Boolean  @default(true)
+  preferences Boolean  @default(false)
+  statistics  Boolean  @default(false)
+  marketing   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([visitorKey])
+  @@map("cookie_consents")
+}
+
+// ---------- CONFIGURAÇÃO ----------
+
+model SiteSettings {
+  id                  Int      @id @default(1)
+  name                String   @default("Daniel de Souza Advocacia e Consultoria Jurídica")
+  shortName           String   @default("DS Advocacia")
+  tagline             String   @default("Direito com estratégia, conhecimento e proximidade.")
+  logo                String?
+  logoDark            String?
+  favicon             String?
+  oab                 String?
+  phone               String?
+  whatsapp            String?
+  whatsappMessage     String   @default("Olá, gostaria de obter informações sobre o atendimento do escritório.")
+  instagram           String?
+  instagramProfile    String?
+  email               String?
+  address             String?
+  hours               String?
+  heroTitle           String   @default("Direito com estratégia, conhecimento e proximidade.")
+  heroSubtitle        String   @default("Daniel de Souza Advocacia e Consultoria Jurídica")
+  heroText            String?
+  institutionalPhrase String?
+  lawyerName          String?
+  lawyerPhoto         String?
+  lawyerBio           String?
+  lawyerFormation     String?
+  lawyerSpecializations String?
+  lawyerExperience    String?
+  lawyerTrajectory    String?
+  updatedAt           DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model SeoSettings {
+  id              Int      @id @default(1)
+  siteTitle       String   @default("Daniel de Souza Advocacia e Consultoria Jurídica")
+  siteDescription String   @default("Advocacia e consultoria jurídica nas áreas Previdenciária, Trabalhista, Tributária, Bancária e Direitos das Pessoas Autistas.")
+  ogImage         String?
+  twitterHandle   String?
+  robots          String   @default("index,follow")
+  updatedAt       DateTime @updatedAt
+
+  @@map("seo_settings")
+}
+
+model Config {
+  key       String   @id
+  value     String?
+  type      String   @default("text")
+  updatedAt DateTime @updatedAt
+
+  @@map("config")
+}
+
+// ---------- MÍDIA E LOGS ----------
+
+model Media {
+  id         String   @id @default(cuid())
+  filename   String
+  alt        String?
+  mimeType   String?
+  size       Int?
+  width      Int?
+  height     Int?
+  url        String
+  createdAt  DateTime @default(now())
+  uploadedBy String?
+  user       User?    @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  @@map("media")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
+  details    String?
+  ip         String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@map("audit_logs")
+}
