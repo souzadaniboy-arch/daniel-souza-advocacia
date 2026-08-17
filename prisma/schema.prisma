@@ -1,7 +1,7 @@
 // ============================================================
 // Prisma Schema — Daniel de Souza Advocacia e Consultoria Jurídica
-// Produção: MySQL (provider = "mysql")
-//   DATABASE_URL="mysql://user:pass@host:3306/dbname"
+// Produção: PostgreSQL (Neon)
+//   DATABASE_URL="postgresql://user:pass@host/dbname?sslmode=require"
 //
 // Dev local (SQLite): trocar provider para "sqlite" e
 //   DATABASE_URL="file:./dev.db" no .env
@@ -25,7 +25,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
