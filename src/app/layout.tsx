@@ -26,11 +26,19 @@ export const viewport: Viewport = {
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 export async function generateMetadata(): Promise<Metadata> {
-  const base = await buildMetadata({});
-  return {
-    ...base,
-    metadataBase: new URL(SITE_URL),
-  };
+  try {
+    const base = await buildMetadata({});
+    return {
+      ...base,
+      metadataBase: new URL(SITE_URL),
+    };
+  } catch {
+    return {
+      title: "Daniel de Souza Advocacia e Consultoria Jurídica",
+      description: "Advocacia e consultoria jurídica nas áreas Previdenciária, Trabalhista, Tributária, Bancária e Direitos das Pessoas Autistas.",
+      metadataBase: new URL(SITE_URL),
+    };
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

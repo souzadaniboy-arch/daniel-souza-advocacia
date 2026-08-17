@@ -4,6 +4,8 @@ import { getSessionUser } from "@/lib/auth";
 import { LogoMark } from "@/components/Logo";
 import { LoginForm } from "@/components/admin/LoginForm";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Acesso Restrito",
   robots: { index: false, follow: false },

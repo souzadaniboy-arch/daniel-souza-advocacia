@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
@@ -17,35 +19,44 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/aviso-juridico", lastModified: new Date(), priority: 0.3 },
   ];
 
-  const [areas, articles] = await Promise.all([
-    prisma.category.findMany({
-      where: { type: "AREA", active: true },
-      select: { slug: true, updatedAt: true },
-    }),
-    prisma.article.findMany({
-      where: { status: "PUBLISHED" },
-      select: { slug: true, updatedAt: true, publishedAt: true },
-    }),
-  ]);
+  try {
+    const [areas, articles] = await Promise.all([
+      prisma.category.findMany({
+        where: { type: "AREA", active: true },
+        select: { slug: true, updatedAt: true },
+      }),
+      prisma.article.findMany({
+        where: { status: "PUBLISHED" },
+        select: { slug: true, updatedAt: true, publishedAt: true },
+      }),
+    ]);
 
-  return [
-    ...staticPages.map((page) => ({
+    return [
+      ...staticPages.map((page) => ({
+        url: `${baseUrl}${page.path}`,
+        lastModified: page.lastModified,
+        changeFrequency: "daily" as const,
+        priority: page.priority,
+      })),
+      ...areas.map((area) => ({
+        url: `${baseUrl}/areas/${area.slug}`,
+        lastModified: area.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      })),
+      ...articles.map((article) => ({
+        url: `${baseUrl}/artigos/${article.slug}`,
+        lastModified: article.updatedAt,
+        changeFrequency: "monthly" as const,
+        priority: 0.7,
+      })),
+    ];
+  } catch {
+    return staticPages.map((page) => ({
       url: `${baseUrl}${page.path}`,
       lastModified: page.lastModified,
       changeFrequency: "daily" as const,
       priority: page.priority,
-    })),
-    ...areas.map((area) => ({
-      url: `${baseUrl}/areas/${area.slug}`,
-      lastModified: area.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })),
-    ...articles.map((article) => ({
-      url: `${baseUrl}/artigos/${article.slug}`,
-      lastModified: article.updatedAt,
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    })),
-  ];
+    }));
+  }
 }

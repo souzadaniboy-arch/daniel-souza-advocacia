@@ -5,22 +5,34 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { prisma } from "@/lib/prisma";
 import { getSiteData } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const { settings } = await getSiteData();
-  const areas = await prisma.category.findMany({
-    where: { type: "AREA", active: true },
-    select: { slug: true, whatsappMessage: true },
-    orderBy: { order: "asc" },
-  });
+  let settings = null;
+  let areaMessages: { path: string; message: string }[] = [];
+  let bannerText: string | null = null;
 
-  const areaMessages = areas
-    .filter((a) => a.whatsappMessage)
-    .map((a) => ({
-      path: `/areas/${a.slug}`,
-      message: a.whatsappMessage ?? "",
-    }));
+  try {
+    const data = await getSiteData();
+    settings = data.settings;
 
-  const bannerText = (await prisma.config.findUnique({ where: { key: "cookies.bannerText" } }))?.value;
+    const areas = await prisma.category.findMany({
+      where: { type: "AREA", active: true },
+      select: { slug: true, whatsappMessage: true },
+      orderBy: { order: "asc" },
+    });
+
+    areaMessages = areas
+      .filter((a) => a.whatsappMessage)
+      .map((a) => ({
+        path: `/areas/${a.slug}`,
+        message: a.whatsappMessage ?? "",
+      }));
+
+    bannerText = (await prisma.config.findUnique({ where: { key: "cookies.bannerText" } }))?.value ?? null;
+  } catch {
+    // Banco indisponível — usa valores padrão
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
