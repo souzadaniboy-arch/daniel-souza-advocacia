@@ -8,6 +8,8 @@ export interface SettingsData {
   name: string;
   shortName: string;
   tagline: string;
+  logo: string;
+  favicon: string;
   oab: string;
   phone: string;
   whatsapp: string;
@@ -40,6 +42,8 @@ export function SettingsForm({ initial }: SettingsFormProps) {
     name: "",
     shortName: "",
     tagline: "",
+    logo: "",
+    favicon: "",
     oab: "",
     phone: "",
     whatsapp: "",
@@ -107,7 +111,26 @@ export function SettingsForm({ initial }: SettingsFormProps) {
           <Input label="Nome curto (menu/rodapé)" required value={data.shortName} onChange={(e) => set("shortName", e.target.value)} />
           <Input label="Tagline" required value={data.tagline} onChange={(e) => set("tagline", e.target.value)} />
           <Input label="OAB" value={data.oab} onChange={(e) => set("oab", e.target.value)} />
+          <Input
+            label="Logo (URL da imagem, ex.: /logo.png)"
+            placeholder="/logo.png"
+            value={data.logo}
+            onChange={(e) => set("logo", e.target.value)}
+          />
+          <Input
+            label="Favicon (URL da imagem 32x32 ou 64x64)"
+            placeholder="/favicon.png"
+            value={data.favicon}
+            onChange={(e) => set("favicon", e.target.value)}
+          />
         </div>
+        {data.logo && (
+          <div className="mt-4 flex items-center gap-3 rounded-sm border border-brand-sand bg-white p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.logo} alt="Prévia do logo" className="h-12 w-auto max-w-40 object-contain" />
+            <span className="text-xs text-brand-gray">Prévia do logo</span>
+          </div>
+        )}
       </section>
 
       <section>
